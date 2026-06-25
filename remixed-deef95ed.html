@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>さいころ ガッチャンコ！</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF3E2;
+    --ink:#5B4636;
+    --coral:#F08A6B;
+    --mint:#9CCFB6;
+    --soda:#A9C9E8;
+    --butter:#F6D376;
+    --milk:#FFFDF4;
+    --shadow:rgba(91,70,54,.18);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ min-height:100%; }
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","BIZ UDGothic","Yu Gothic",sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    background-image:radial-gradient(rgba(91,70,54,.05) 1px, transparent 1.5px);
+    background-size:26px 26px;
+    padding:18px 14px 30px;
+    display:flex; justify-content:center;
+  }
+  button,input{ font-family:inherit; color:inherit; }
+
+  .app{ width:100%; max-width:680px; }
+
+  /* ===== てがきふうの ワク ===== */
+  .wobble{
+    border:3.5px solid var(--ink);
+    border-radius:255px 18px 225px 18px / 18px 225px 18px 255px;
+    background:var(--milk);
+    box-shadow:3px 4px 0 var(--shadow);
+  }
+  .wobble2{
+    border:3.5px solid var(--ink);
+    border-radius:22px 255px 22px 225px / 225px 22px 255px 22px;
+    background:var(--milk);
+    box-shadow:3px 4px 0 var(--shadow);
+  }
+
+  /* ===== タイトル ===== */
+  .title{ font-weight:900; font-size:clamp(28px,6.5vw,46px); letter-spacing:.03em; text-align:center; transform:rotate(-2deg); margin-bottom:4px; }
+  .title .pop{ display:inline-block; color:var(--coral); transform:rotate(4deg) translateY(-3px); }
+  .subtitle{ font-weight:700; font-size:clamp(13px,3vw,17px); text-align:center; margin-bottom:16px; transform:rotate(-1deg); }
+
+  /* ===== モードタブ ===== */
+  .mode-tabs{ display:flex; gap:12px; justify-content:center; margin-bottom:18px; }
+  .tab-btn{
+    flex:1; max-width:210px; cursor:pointer;
+    font-weight:900; font-size:clamp(15px,3.2vw,20px); line-height:1.25;
+    padding:12px 6px; color:var(--ink);
+    border:4px solid var(--ink); border-radius:60px 25px 60px 25px/25px 60px 25px 60px;
+    box-shadow:0 6px 0 var(--ink); transition:transform .08s, box-shadow .08s, filter .12s;
+    background:var(--milk);
+  }
+  .tab-btn small{ display:block; font-size:.6em; font-weight:700; margin-top:2px; }
+  .tab-btn:active{ transform:translateY(5px); box-shadow:0 1px 0 var(--ink); }
+  .tab-btn.tnum{ transform:rotate(-1.5deg); }
+  .tab-btn.tblk{ transform:rotate(1deg); }
+  .tab-btn.tnum.active{ background:var(--soda); }
+  .tab-btn.tblk.active{ background:var(--mint); }
+  .tab-btn.active{ transform:rotate(0); }
+
+  /* ===== スコアバッジ ===== */
+  .score-row{ display:flex; gap:10px; justify-content:center; margin-bottom:14px; flex-wrap:wrap; }
+  .badge{ padding:6px 16px; font-weight:900; font-size:clamp(12px,2.6vw,15px); display:flex; align-items:center; gap:7px; }
+  .badge.b1{ transform:rotate(-1.5deg); background:var(--mint); }
+  .badge.b2{ transform:rotate(1deg); background:#F3D2C6; }
+  .badge.b3{ transform:rotate(-1deg); background:var(--butter); }
+  .badge .num{ font-size:clamp(17px,3.4vw,22px); min-width:1.4em; text-align:center; }
+
+  /* ===== さいころ／かたまり の へや ===== */
+  .place-row{ display:flex; gap:12px; justify-content:center; margin-bottom:8px; }
+  .place-col{ flex:1; max-width:200px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .place-label{
+    font-weight:900; font-size:clamp(12px,2.6vw,16px);
+    border:3px solid var(--ink); border-radius:50px 16px 50px 16px/16px 50px 16px 50px;
+    padding:3px 16px;
+  }
+  .lbl-h{ background:var(--soda); transform:rotate(-2deg); }
+  .lbl-t{ background:var(--mint); transform:rotate(2deg); }
+  .lbl-o{ background:var(--butter); transform:rotate(-1.5deg); }
+
+  /* さいころのめん */
+  .dice-face{
+    width:clamp(82px,22vw,120px); height:clamp(82px,22vw,120px);
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(24px,6vw,34px); font-weight:900;
+    cursor:pointer; user-select:none; transition:transform .1s;
+  }
+  .dice-h{ transform:rotate(-1.5deg); }
+  .dice-t{ transform:rotate(1.5deg); }
+  .dice-o{ transform:rotate(-1deg); }
+  .dice-face:not(.stopped):hover{ filter:brightness(1.03); }
+  .dice-face.stopped{ cursor:default; animation:pon .45s; }
+  .dice-h.stopped{ background:#E3EEF8; }
+  .dice-t.stopped{ background:#E2F1EA; }
+  .dice-o.stopped{ background:#FCF1D2; }
+  @keyframes pon{ 0%{ transform:scale(.55) rotate(-12deg);} 60%{ transform:scale(1.15) rotate(4deg);} 100%{ transform:scale(1) rotate(0);} }
+
+  /* かたまりキャンバス */
+  .block-canvas{
+    width:clamp(82px,22vw,120px); height:clamp(110px,30vw,150px);
+    cursor:pointer; user-select:none; overflow:hidden;
+    display:flex; align-items:flex-end; justify-content:center; padding:8px;
+    transition:transform .1s;
+  }
+  .blk-h{ transform:rotate(-1.5deg); }
+  .blk-t{ transform:rotate(1.5deg); }
+  .blk-o{ transform:rotate(-1deg); }
+  .block-canvas.stopped{ cursor:default; animation:pon .45s; }
+  .blocks-inner{ display:flex; flex-wrap:wrap; gap:4px; align-content:flex-end; justify-content:center; width:100%; height:100%; }
+  .blk100{ width:24px; height:24px; border:2.5px solid var(--ink); border-radius:5px 7px 5px 7px; background:var(--soda); }
+  .blk10{ width:11px; height:28px; border:2.5px solid var(--ink); border-radius:4px; background:var(--mint); }
+  .blk1{ width:13px; height:13px; border:2.5px solid var(--ink); border-radius:50%; background:var(--coral); }
+
+  .stop-hint{ font-weight:700; font-size:clamp(11px,2.2vw,13px); height:16px; color:#9C8A78; }
+  .stop-hint.done{ color:var(--coral); }
+
+  .phase-msg{ text-align:center; font-weight:700; font-size:clamp(13px,2.8vw,16px); margin:8px 0 14px; min-height:20px; }
+
+  /* ===== マスコット＋ふきだし ===== */
+  .helper{ display:flex; align-items:flex-end; gap:10px; margin-bottom:14px; min-height:60px; }
+  .chara{ position:relative; width:56px; height:50px; flex:0 0 auto; }
+  .chara .body{ position:absolute; inset:0; background:var(--mint); border:3.5px solid var(--ink); border-radius:46% 54% 52% 48%/58% 54% 46% 42%; }
+  .chara .face{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); display:flex; align-items:center; gap:5px; }
+  .chara .eye{ width:5px; height:5px; background:var(--ink); border-radius:50%; }
+  .chara .mouth{ width:10px; height:5px; border:2.5px solid var(--ink); border-top:none; border-radius:0 0 10px 10px; }
+  .chara.happy .body{ animation:hop .5s; }
+  @keyframes hop{ 0%{transform:translateY(0)} 40%{transform:translateY(-12px) rotate(-6deg)} 100%{transform:translateY(0)} }
+  .bubble{
+    flex:1; padding:10px 16px; font-weight:900; font-size:clamp(14px,2.9vw,18px);
+    border-radius:30px 90px 30px 90px/90px 30px 90px 30px; min-height:46px;
+    display:flex; align-items:center;
+  }
+  .bubble .mini{ color:var(--coral); margin:0 .12em; }
+  .bubble.ok{ background:#E2F1EA; }
+  .bubble.ng{ background:#FBE4DC; }
+
+  /* ===== もんだいエリア ===== */
+  .q-area{ padding:16px 14px; margin-bottom:14px; transform:rotate(-.4deg); }
+  .q-display{ display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .q-part{ display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .q-val{ font-size:clamp(26px,6vw,38px); font-weight:900; min-width:1.6em; text-align:center; }
+  .q-val.vh{ color:#3E7BB6; }
+  .q-val.vt{ color:#3E9C77; }
+  .q-val.vo{ color:#C4742E; }
+  .q-unit{ font-size:clamp(10px,2vw,12px); font-weight:700; color:#9C8A78; white-space:nowrap; }
+  .q-sign{ font-size:clamp(22px,5vw,30px); font-weight:900; }
+  .slot{
+    display:inline-block; min-width:1.8em; text-align:center;
+    font-size:clamp(26px,6vw,38px); font-weight:900; color:#B9A78F;
+    border-bottom:4px dotted var(--ink);
+  }
+  .slot.filled{ color:var(--coral); border-bottom-color:transparent; animation:pon .45s; }
+
+  .ans-row{ display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
+  .ans-input{
+    font-size:clamp(22px,5vw,30px); font-weight:900; text-align:center;
+    width:140px; padding:8px 10px; background:var(--milk); outline:none;
+  }
+  .ans-input:focus{ box-shadow:3px 4px 0 var(--shadow), 0 0 0 3px rgba(240,138,107,.4); }
+
+  .big-btn{
+    font-size:clamp(16px,3.6vw,22px); font-weight:900; letter-spacing:.06em;
+    padding:11px 30px; background:var(--coral); color:#fff; cursor:pointer;
+    border:4px solid var(--ink); border-radius:60px 25px 60px 25px/25px 60px 25px 60px;
+    box-shadow:0 6px 0 var(--ink); transition:transform .08s, box-shadow .08s;
+  }
+  .big-btn:active{ transform:translateY(5px); box-shadow:0 1px 0 var(--ink); }
+  .big-btn:disabled{ background:#D8C7B4; color:#fff; cursor:default; box-shadow:0 6px 0 var(--ink); }
+  .big-btn.sub{ background:var(--milk); color:var(--ink); }
+
+  .next-wrap{ text-align:center; }
+
+  /* ===== ほし ===== */
+  .star{ position:fixed; font-size:26px; z-index:30; pointer-events:none; animation:starFly .9s ease-out forwards; }
+  @keyframes starFly{ 0%{ transform:translate(0,0) scale(.4) rotate(0); opacity:1; } 100%{ transform:translate(var(--dx),var(--dy)) scale(1.2) rotate(220deg); opacity:0; } }
+
+  @media (max-width:430px){
+    .place-row{ gap:8px; }
+    .badge{ padding:5px 11px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="title">さいころ <span class="pop">ガッチャンコ！</span></div>
+  <div class="subtitle">〜 くらいどりの たしざん 〜</div>
+
+  <div class="mode-tabs">
+    <button class="tab-btn tnum active" id="tabNum" onclick="setMode('num')">すうじ<small>100＋20＋3</small></button>
+    <button class="tab-btn tblk" id="tabBlk" onclick="setMode('blk')">かたまり<small>ブロックを かぞえる</small></button>
+  </div>
+
+  <div class="score-row">
+    <div class="badge b1 wobble2">⭐ せいかい <span class="num" id="sOk">0</span></div>
+    <div class="badge b2 wobble2">💧 まちがい <span class="num" id="sNg">0</span></div>
+    <div class="badge b3 wobble2">📝 もんだい <span class="num" id="sTot">0</span></div>
+  </div>
+
+  <!-- すうじモード -->
+  <div id="numMode">
+    <div class="place-row">
+      <div class="place-col">
+        <div class="place-label lbl-h">ひゃくのくらい</div>
+        <div class="dice-face dice-h wobble" id="dn0" onclick="stopDice(0)">100</div>
+        <div class="stop-hint" id="dh0">タップしてとめる</div>
+      </div>
+      <div class="place-col">
+        <div class="place-label lbl-t">じゅうのくらい</div>
+        <div class="dice-face dice-t wobble2" id="dn1" onclick="stopDice(1)">10</div>
+        <div class="stop-hint" id="dh1">タップしてとめる</div>
+      </div>
+      <div class="place-col">
+        <div class="place-label lbl-o">いちのくらい</div>
+        <div class="dice-face dice-o wobble" id="dn2" onclick="stopDice(2)">1</div>
+        <div class="stop-hint" id="dh2">タップしてとめる</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- かたまりモード -->
+  <div id="blkMode" style="display:none;">
+    <div class="place-row">
+      <div class="place-col">
+        <div class="place-label lbl-h">ひゃくのかたまり</div>
+        <div class="block-canvas blk-h wobble" id="bc0" onclick="stopBlock(0)"><div class="blocks-inner" id="bi0"></div></div>
+        <div class="stop-hint" id="bh0">タップしてとめる</div>
+      </div>
+      <div class="place-col">
+        <div class="place-label lbl-t">じゅうのかたまり</div>
+        <div class="block-canvas blk-t wobble2" id="bc1" onclick="stopBlock(1)"><div class="blocks-inner" id="bi1"></div></div>
+        <div class="stop-hint" id="bh1">タップしてとめる</div>
+      </div>
+      <div class="place-col">
+        <div class="place-label lbl-o">いちのかたまり</div>
+        <div class="block-canvas blk-o wobble" id="bc2" onclick="stopBlock(2)"><div class="blocks-inner" id="bi2"></div></div>
+        <div class="stop-hint" id="bh2">タップしてとめる</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-msg" id="phaseMsg">⬆ ３つを タップして とめよう！</div>
+
+  <!-- マスコット -->
+  <div class="helper">
+    <div class="chara" id="chara">
+      <div class="body"></div>
+      <div class="face"><span class="eye"></span><span class="eye"></span><span class="mouth"></span></div>
+    </div>
+    <div class="bubble wobble" id="bubble">いっしょに ガッチャンコ しよう！</div>
+  </div>
+
+  <!-- もんだい -->
+  <div class="q-area wobble2" id="qArea" style="display:none;">
+    <div class="q-display">
+      <div class="q-part"><div class="q-val vh" id="qH">—</div><div class="q-unit">ひゃく</div></div>
+      <div class="q-sign">＋</div>
+      <div class="q-part"><div class="q-val vt" id="qT">—</div><div class="q-unit">じゅう</div></div>
+      <div class="q-sign">＋</div>
+      <div class="q-part"><div class="q-val vo" id="qO">—</div><div class="q-unit">いち</div></div>
+      <div class="q-sign">＝</div>
+      <div class="q-part"><span class="slot" id="qTotal">？</span><div class="q-unit">こたえ</div></div>
+    </div>
+    <div class="ans-row">
+      <input class="ans-input wobble" id="ansInp" type="number" inputmode="numeric" placeholder="？" min="0" max="999"/>
+      <button class="big-btn" id="chkBtn" onclick="checkAns()">こたえる！</button>
+    </div>
+  </div>
+
+  <div class="next-wrap">
+    <button class="big-btn sub" onclick="nextRound()">つぎの もんだい ▶</button>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+var mode = "num";
+var vals = [100, 10, 1];
+var stopped = [false, false, false];
+var timers = [null, null, null];
+var cycleIdx = [0, 0, 0];
+var answered = false;
+var score = { ok:0, ng:0, tot:0 };
+
+var numPools = [
+  [100,200,300,400,500,600,700,800,900],
+  [10,20,30,40,50,60,70,80,90],
+  [1,2,3,4,5,6,7,8,9]
+];
+var blkClass = ["blk100","blk10","blk1"];
+var speeds = [110, 90, 70];
+
+function $(id){ return document.getElementById(id); }
+function setBubble(html, cls){
+  var b = $("bubble");
+  b.innerHTML = html;
+  b.className = "bubble wobble" + (cls ? " " + cls : "");
+}
+
+function setMode(m){
+  mode = m;
+  $("tabNum").classList.toggle("active", m === "num");
+  $("tabBlk").classList.toggle("active", m === "blk");
+  $("numMode").style.display = m === "num" ? "" : "none";
+  $("blkMode").style.display = m === "blk" ? "" : "none";
+  nextRound();
+}
+
+/* すうじモード */
+function tickDice(i){
+  cycleIdx[i] = (cycleIdx[i] + 1) % 9;
+  vals[i] = numPools[i][cycleIdx[i]];
+  $("dn" + i).textContent = vals[i];
+}
+function stopDice(i){
+  if(stopped[i] || answered) return;
+  stopped[i] = true;
+  clearInterval(timers[i]);
+  var el = $("dn" + i);
+  el.classList.remove("wobble","wobble2");
+  el.classList.add("stopped");
+  el.classList.add(i === 1 ? "wobble2" : "wobble");
+  var h = $("dh" + i); h.textContent = "✓ とまった！"; h.classList.add("done");
+  if(stopped.every(Boolean)) showQ();
+}
+
+/* かたまりモード */
+function renderBlocks(i, n){
+  var inner = $("bi" + i);
+  inner.innerHTML = "";
+  for(var k = 0; k < n; k++){
+    var d = document.createElement("div");
+    d.className = blkClass[i];
+    d.style.transform = "rotate(" + (Math.random()*8-4).toFixed(1) + "deg)";
+    inner.appendChild(d);
+  }
+}
+function tickBlock(i){
+  cycleIdx[i] = (cycleIdx[i] + 1) % 9;
+  vals[i] = cycleIdx[i] + 1;
+  renderBlocks(i, vals[i]);
+}
+function stopBlock(i){
+  if(stopped[i] || answered) return;
+  stopped[i] = true;
+  clearInterval(timers[i]);
+  var el = $("bc" + i);
+  el.classList.add("stopped");
+  var h = $("bh" + i); h.textContent = "✓ とまった！"; h.classList.add("done");
+  if(stopped.every(Boolean)) showQ();
+}
+
+/* もんだい */
+function showQ(){
+  $("phaseMsg").textContent = "";
+  $("qArea").style.display = "";
+  if(mode === "num"){
+    $("qH").textContent = vals[0];
+    $("qT").textContent = vals[1];
+    $("qO").textContent = vals[2];
+  }else{
+    $("qH").textContent = vals[0] * 100;
+    $("qT").textContent = vals[1] * 10;
+    $("qO").textContent = vals[2];
+  }
+  var slot = $("qTotal");
+  slot.textContent = "？";
+  slot.classList.remove("filled");
+  $("ansInp").value = "";
+  $("chkBtn").disabled = false;
+  answered = false;
+  setBubble("ぜんぶで いくつ かな？");
+  setTimeout(function(){ $("ansInp").focus(); }, 50);
+}
+
+function correctTotal(){
+  if(mode === "num") return vals[0] + vals[1] + vals[2];
+  return vals[0]*100 + vals[1]*10 + vals[2];
+}
+
+function checkAns(){
+  if(answered) return;
+  var raw = $("ansInp").value;
+  if(raw === "") { $("ansInp").focus(); return; }
+  var user = parseInt(raw, 10);
+  var ans = correctTotal();
+  answered = true;
+  score.tot++;
+  $("chkBtn").disabled = true;
+  var slot = $("qTotal");
+  slot.textContent = ans;
+  slot.classList.add("filled");
+
+  if(user === ans){
+    score.ok++;
+    var cheers = ["そのとおり！", "ガッチャンコ！", "すごいぞ〜！", "めいじん だね！", "ピンポーン！"];
+    setBubble(cheers[Math.floor(Math.random()*cheers.length)], "ok");
+    var c = $("chara"); c.classList.remove("happy"); void c.offsetWidth; c.classList.add("happy");
+    starsBurst();
+  }else{
+    score.ng++;
+    setBubble("おしい！ こたえは <span class='mini'>" + ans + "</span> だよ。", "ng");
+  }
+  $("sOk").textContent = score.ok;
+  $("sNg").textContent = score.ng;
+  $("sTot").textContent = score.tot;
+}
+
+function starsBurst(){
+  var r = $("qArea").getBoundingClientRect();
+  var cx = r.left + r.width/2, cy = r.top + r.height/2;
+  var icons = ["⭐","✨","🌟"];
+  for(var i = 0; i < 8; i++){
+    var s = document.createElement("div");
+    s.className = "star";
+    s.textContent = icons[i % 3];
+    s.style.left = cx + "px";
+    s.style.top = cy + "px";
+    s.style.setProperty("--dx", (Math.random()*260-130) + "px");
+    s.style.setProperty("--dy", (-70 - Math.random()*140) + "px");
+    document.body.appendChild(s);
+    (function(node){ setTimeout(function(){ node.remove(); }, 1000); })(s);
+  }
+}
+
+function startAll(){
+  stopped = [false, false, false];
+  timers.forEach(clearInterval);
+  for(var i = 0; i < 3; i++){
+    cycleIdx[i] = Math.floor(Math.random()*9);
+    if(mode === "num"){
+      vals[i] = numPools[i][cycleIdx[i]];
+      var el = $("dn" + i);
+      el.classList.remove("stopped");
+      el.textContent = vals[i];
+      var h = $("dh" + i); h.textContent = "タップしてとめる"; h.classList.remove("done");
+      (function(idx){ timers[idx] = setInterval(function(){ tickDice(idx); }, speeds[idx]); })(i);
+    }else{
+      vals[i] = cycleIdx[i] + 1;
+      var el2 = $("bc" + i);
+      el2.classList.remove("stopped");
+      renderBlocks(i, vals[i]);
+      var h2 = $("bh" + i); h2.textContent = "タップしてとめる"; h2.classList.remove("done");
+      (function(idx){ timers[idx] = setInterval(function(){ tickBlock(idx); }, speeds[idx]); })(i);
+    }
+  }
+}
+
+function nextRound(){
+  $("qArea").style.display = "none";
+  $("phaseMsg").textContent = "⬆ ３つを タップして とめよう！";
+  setBubble("いっしょに ガッチャンコ しよう！");
+  answered = false;
+  startAll();
+}
+
+$("ansInp").addEventListener("keydown", function(e){
+  if(e.key === "Enter") checkAns();
+});
+
+startAll();
+</script>
+</body>
+</html>
